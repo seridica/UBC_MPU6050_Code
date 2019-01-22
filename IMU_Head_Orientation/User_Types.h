@@ -30,4 +30,18 @@ typedef struct imu_data_block_t
 	imu_sample_t block_storage[SAMPLES_PER_BLOCK];
 };
 
+// Struct for calibration
+typedef struct calibration_t
+{
+  double x_row[3];
+  double y_row[3];
+  double z_row[3];
+};
+
+typedef struct headrp_t
+{
+  double headroll;
+  double headpitch;
+};
+
 #endif

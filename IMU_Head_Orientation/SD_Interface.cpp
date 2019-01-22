@@ -42,7 +42,7 @@ void create_bin_file(SdFat *sd, SdBaseFile *binFile) {
   Serial.println(F("Erase Complete"));
 }
 
-void record_bin_file(SdFat *sd, SdBaseFile *binFile, uint16_t microDelay, uint32_t recordTime) {
+void record_bin_file(SdFat *sd, SdBaseFile *binFile, uint32_t microDelay, uint32_t recordTime) {
 	uint32_t nSamples = recordTime / microDelay;
 	uint32_t logTime = micros();
 	imu_sample_t record_sample;
@@ -75,7 +75,7 @@ void record_bin_file(SdFat *sd, SdBaseFile *binFile, uint16_t microDelay, uint32
 	}
 }
 
-void record_file(SdFat *sd, char *Filename, uint16_t microDelay, uint32_t recordTime) {
+void record_file(SdFat *sd, char *Filename, uint32_t microDelay, uint32_t recordTime) {
   uint32_t nSamples = recordTime / microDelay;
   uint32_t logTime = micros();
   uint32_t sample_time;
@@ -109,14 +109,14 @@ void record_file(SdFat *sd, char *Filename, uint16_t microDelay, uint32_t record
   csvFile.close();
 }
 
-void record_bin_file_block(SdFat *sd, SdBaseFile *binFile, uint16_t microDelay, uint32_t recordTime) {
+void record_bin_file_block(SdFat *sd, SdBaseFile *binFile, uint32_t microDelay, uint32_t recordTime) {
 	const uint8_t BUFFER_BLOCK_COUNT = 10;
   
 	const uint8_t QUEUE_DIM = BUFFER_BLOCK_COUNT + 1;
 	// Index of last queue location.
 	const uint8_t QUEUE_LAST = QUEUE_DIM - 1;
 
-	uint32_t maxBlocks = recordTime / microDelay / SAMPLES_PER_BLOCK;
+	uint32_t maxBlocks = recordTime / (uint32_t)SAMPLES_PER_BLOCK;
   Serial.print("Max Blocks: ");
   Serial.println(maxBlocks);
 	if ( maxBlocks > FILE_BLOCK_COUNT ) {

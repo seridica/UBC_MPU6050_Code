@@ -17,13 +17,13 @@
 void create_bin_file(SdFat *sd, SdBaseFile *binFile);
 
 // Write data - This function records and writes one sample at a time
-void record_bin_file(SdFat *sd, SdBaseFile *binFile, uint16_t microDelay, uint32_t recordTime);
+void record_bin_file(SdFat *sd, SdBaseFile *binFile, uint32_t microDelay, uint32_t recordTime);
 
 // Write data - This is adapted from SdFat.h example
 // This function records and writes in 512kB blocks
-void record_bin_file_block(SdFat *sd, SdBaseFile *binFile, uint16_t microDelay, uint32_t recordTime);
+void record_bin_file_block(SdFat *sd, SdBaseFile *binFile, uint32_t microDelay, uint32_t recordTime);
 
-void record_file(SdFat *sd, char *Filename, uint16_t microDelay, uint32_t recordTime);
+void record_file(SdFat *sd, char *Filename, uint32_t microDelay, uint32_t recordTime);
 
 // Read data
 void read_bin_file(SdFat *sd, SdBaseFile *binFile);

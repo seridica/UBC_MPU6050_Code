@@ -3,6 +3,7 @@
 #include "User_Types.h"
 #include <Wire.h>
 #include "SD_Interface.h"
+#include <math.h>
 
 void ReadSensor(imu_data_t* sample) {
   // Read the raw values.
@@ -68,47 +69,121 @@ double ConvertGyro( int16_t inbits ) {
   return outValue;
 }
 
-// Record Samples for calibration
-/*
-void CalibrationLoop(SdFat *SD) {
-      int incomingByte = 0;
-      Serial.println( "Place Subject z-up" );
-      
-      while(Serial.available() <= 0) {
-      }
-      incomingByte = Serial.read();
-      while( incomingByte != 10 ) {
-        incomingByte = Serial.read();
-      }
-      
-      record_file( SD, "Calibration_Z.csv", 1000, 100000 );
-      
-      Serial.println( "Place Subject x-up" );
+// Load Calibration files
+void LoadCalibration(SdFat *sd, calibration_t *OutputCalib) {
+  
+  SdBaseFile calibFile;
+  if (!calibFile.open("Calibration_Z", O_RDWR)) {
+    Serial.println();
+    Serial.println(F("No Calibration File Found"));
+    return;
+  }
 
-      while(Serial.available() <= 0) {
-      }
-      incomingByte = Serial.read();
-      while( incomingByte != 10 ) {
-        incomingByte = Serial.read();
-      }
-      
-      record_file( SD, "Calibration_X.csv", 1000, 100000 );
-      
-      Serial.println( "Place Subject y-up" );
-      
-      while(Serial.available() <= 0) {
-      }
-      incomingByte = Serial.read();
-      while( incomingByte != 10 ) {
-        incomingByte = Serial.read();
-      }
-      
-      record_file( SD, "Calibration_Y.csv", 1000, 100000 );
-      
-      Serial.println( "Calibration Complete" );
+  calibFile.rewind();
+  int32_t x_val = 0;
+  int32_t y_val = 0;
+  int32_t z_val = 0;
+  uint32_t counter = 0;
+  imu_sample_t data_sample;
+  while (calibFile.read(&data_sample, sizeof(imu_sample_t)) == sizeof(imu_sample_t)) {
+      x_val += data_sample.sample.x_accel;
+      y_val += data_sample.sample.y_accel;
+      z_val += data_sample.sample.z_accel;
+      counter++;
+  }
+
+  double z_vec[3] = { (double)x_val / (double)counter, (double)y_val / (double)counter, (double)z_val / (double) counter };
+  double vec_mag = sqrt( z_vec[0]*z_vec[0] + z_vec[1]*z_vec[1] + z_vec[2]*z_vec[2] );
+  z_vec[0] /= vec_mag;
+  z_vec[1] /= vec_mag;
+  z_vec[2] /= vec_mag;
+  calibFile.close();
+
+  if (!calibFile.open("Calibration_X", O_RDWR)) {
+    Serial.println();
+    Serial.println(F("No Calibration File Found"));
+    return;
+  }
+
+  calibFile.rewind();
+  x_val = 0;
+  y_val = 0;
+  z_val = 0;
+  counter = 0;
+  while (calibFile.read(&data_sample, sizeof(imu_sample_t)) == sizeof(imu_sample_t)) {
+      x_val += data_sample.sample.x_accel;
+      y_val += data_sample.sample.y_accel;
+      z_val += data_sample.sample.z_accel;
+      counter++;
+  }
+
+  double x_vec[3] = { (double)x_val / (double)counter, (double)y_val / (double)counter, (double)z_val / (double) counter };
+  vec_mag = sqrt( x_vec[0]*x_vec[0] + x_vec[1]*x_vec[1] + x_vec[2]*x_vec[2] );
+  x_vec[0] /= vec_mag;
+  x_vec[1] /= vec_mag;
+  x_vec[2] /= vec_mag;
+  calibFile.close();
+  
+  if (!calibFile.open("Calibration_Y", O_RDWR)) {
+    Serial.println();
+    Serial.println(F("No Calibration File Found"));
+    return;
+  }
+
+  calibFile.rewind();
+  x_val = 0;
+  y_val = 0;
+  z_val = 0;
+  counter = 0;
+  while (calibFile.read(&data_sample, sizeof(imu_sample_t)) == sizeof(imu_sample_t)) {
+      x_val += data_sample.sample.x_accel;
+      y_val += data_sample.sample.y_accel;
+      z_val += data_sample.sample.z_accel;
+      counter++;
+  }
+
+  double y_vec[3] = { (double)x_val / (double)counter, (double)y_val / (double)counter, (double)z_val / (double) counter };
+  vec_mag = sqrt( y_vec[0]*y_vec[0] + y_vec[1]*y_vec[1] + y_vec[2]*y_vec[2] );
+  y_vec[0] /= vec_mag;
+  y_vec[1] /= vec_mag;
+  y_vec[2] /= vec_mag;
+  calibFile.close();
+
+  /*
+   * RIGHT NOW I JUST USE THE CROSS PRODUCT METHOD FOR FINDING FRAMES. WOULD LIKE TO GET SVD WORKING HERE IN THE FUTURE
+   */
+  OutputCalib->z_row[0] = z_vec[0];
+  OutputCalib->z_row[1] = z_vec[1];
+  OutputCalib->z_row[2] = z_vec[2];
+  OutputCalib->y_row[0] = z_vec[1]*x_vec[2] - z_vec[2]*x_vec[1];
+  OutputCalib->y_row[1] = z_vec[2]*x_vec[0] - z_vec[0]*x_vec[2];
+  OutputCalib->y_row[2] = z_vec[0]*x_vec[1] - z_vec[1]*x_vec[0];
+  OutputCalib->x_row[0] = OutputCalib->y_row[1]*z_vec[2] - OutputCalib->y_row[2]*z_vec[1];
+  OutputCalib->x_row[1] = OutputCalib->y_row[2]*z_vec[0] - OutputCalib->y_row[0]*z_vec[2];
+  OutputCalib->x_row[2] = OutputCalib->y_row[0]*z_vec[1] - OutputCalib->y_row[1]*z_vec[0];
+
+  return;
 }
-*/
 
+void ComputeHeadPitch( calibration_t *CalibStruct, imu_data_t* record_sample, headrp_t *head_rp )
+{
+  double invec[3] = {(double)record_sample->x_accel, (double)record_sample->y_accel, (double)record_sample->z_accel};
+  double magvec = sqrt( invec[0]*invec[0] + invec[1]*invec[1] + invec[2]*invec[2] );
+  invec[0] /= magvec;
+  invec[1] /= magvec;
+  invec[2] /= magvec;
+
+  double newvec[3];
+  newvec[0] = invec[0]*CalibStruct->x_row[0] + invec[1]*CalibStruct->x_row[1] + invec[2]*CalibStruct->x_row[2];
+  newvec[1] = invec[0]*CalibStruct->y_row[0] + invec[1]*CalibStruct->y_row[1] + invec[2]*CalibStruct->y_row[2];
+  newvec[2] = invec[0]*CalibStruct->z_row[0] + invec[1]*CalibStruct->z_row[1] + invec[2]*CalibStruct->z_row[2];
+
+  //head_rp->headpitch = ( atan2(sqrt( newvec[0]*newvec[0] + newvec[1]*newvec[1] ), -newvec[2]) * 180. / 3.1415 );
+  //head_rp->headroll = ( atan2( newvec[1], newvec[0] ) * 180. / 3.1415 );
+  head_rp->headpitch = atan2( -newvec[0], newvec[2] ) * 180. / 3.1415;
+  head_rp->headroll = atan2( newvec[1], sqrt( newvec[0]*newvec[0] + newvec[2]*newvec[2] ) ) * 180. / 3.1415;
+  return;
+}
 
 // --------------------------------------------------------
 // MPU6050_write
