@@ -105,7 +105,14 @@ void CalibrationLoop() {
       record_bin_file_block( &SD, &binFile, 2000, 500 );
       //record_bin_file( &SD, &binFile, 2000, 100000 );
       convert_bin_to_csv( &SD, &binFile, "Calibration_Z.csv" );
-      binFile.rename(SD.vwd(),"Calibration_Z");
+      if (SD.exists("Calibration_Z")) {
+        if (!SD.remove("Calibration_Z")) {
+          Serial.println("Can't remove tmp file");
+        }
+      }
+      if( !binFile.rename(SD.vwd(),"Calibration_Z") ) {
+          Serial.println("Can't rename file");
+      }
       
       Serial.println( "Place Subject x-up" );
 
@@ -120,8 +127,14 @@ void CalibrationLoop() {
       create_bin_file( &SD, &binFile );
       record_bin_file_block( &SD, &binFile, 2000, 500 );
       convert_bin_to_csv( &SD, &binFile, "Calibration_X.csv" );
-      binFile.rename(SD.vwd(),"Calibration_X");
-      
+      if (SD.exists("Calibration_X")) {
+        if (!SD.remove("Calibration_X")) {
+          Serial.println("Can't remove tmp file");
+        }
+      }
+      if( !binFile.rename(SD.vwd(),"Calibration_X") ) {
+          Serial.println("Can't rename file");
+      }
       Serial.println( "Place Subject y-up" );
       
       while(Serial.available() <= 0) {
@@ -135,7 +148,14 @@ void CalibrationLoop() {
       create_bin_file( &SD, &binFile );
       record_bin_file_block( &SD, &binFile, 2000, 500 );
       convert_bin_to_csv( &SD, &binFile, "Calibration_Y.csv" );
-      binFile.rename(SD.vwd(),"Calibration_Y");
+      if (SD.exists("Calibration_Y")) {
+        if (!SD.remove("Calibration_Y")) {
+          Serial.println("Can't remove tmp file");
+        }
+      }
+      if( !binFile.rename(SD.vwd(),"Calibration_Y") ) {
+          Serial.println("Can't rename file");
+      }
       
       Serial.println( "Calibration Complete" );
 }
